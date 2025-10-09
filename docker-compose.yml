@@ -1,0 +1,12 @@
+services:
+  scriberr:
+    image: ghcr.io/rishikanthc/scriberr:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - scriberr_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  scriberr_data:
+
