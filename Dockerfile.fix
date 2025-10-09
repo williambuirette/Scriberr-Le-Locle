@@ -1,0 +1,12 @@
+FROM ghcr.io/rishikanthc/scriberr:latest
+
+# Copy the modified chat_handlers.go
+COPY internal/api/chat_handlers.go /src/internal/api/chat_handlers.go
+COPY internal/models/llm_config.go /src/internal/models/llm_config.go
+
+# Rebuild the Go binary
+WORKDIR /src
+RUN go build -o /app/scriberr cmd/server/main.go
+
+# Keep the same entrypoint
+WORKDIR /app

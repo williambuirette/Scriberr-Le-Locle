@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  scriberr:
+    build:
+      context: .
+      dockerfile: Dockerfile.custom
+    image: scriberr:custom-timeout
+    container_name: scriberr-custom
+    ports:
+      - "8080:8080"
+    volumes:
+      - scriberr_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  scriberr_data:

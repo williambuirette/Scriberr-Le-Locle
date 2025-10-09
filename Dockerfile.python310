@@ -1,0 +1,40 @@
+# Use Python 3.10 which is more stable with WhisperX
+FROM python:3.10-slim AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    HOST=0.0.0.0 \
+    PORT=8080 \
+    DATABASE_PATH=/app/data/scriberr.db \
+    UPLOAD_DIR=/app/data/uploads \
+    PUID=1000 \
+    PGID=1000
+
+WORKDIR /app
+
+# System deps: curl for uv install, ca-certs, ffmpeg for yt-dlp, git for git+ installs, gosu for user switching
+# Build tools: gcc, g++, make for compiling Python C extensions (needed for NeMo dependencies like texterrors)
+RUN apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       curl ca-certificates ffmpeg git gosu \
+       build-essential gcc g++ make python3-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install uv (fast Python package manager) directly to system PATH
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
+  && mv /root/.cargo/bin/uv /usr/local/bin/
+
+# Use official Scriberr binary from the official image
+COPY --from=ghcr.io/rishikanthc/scriberr:latest /app/scriberr /app/scriberr
+COPY --from=ghcr.io/rishikanthc/scriberr:latest /app/internal /app/internal
+
+# Create data directory and set permissions
+RUN mkdir -p /app/data && chown -R 1000:1000 /app/data
+
+# Expose port
+EXPOSE 8080
+
+# Run as non-root user
+USER 1000:1000
+
+# Start the application
+CMD ["/app/scriberr"]

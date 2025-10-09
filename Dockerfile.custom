@@ -1,0 +1,15 @@
+# Utiliser l'image officielle comme base
+FROM ghcr.io/rishikanthc/scriberr:latest AS base
+
+# Copier le fichier modifié avec le timeout augmenté
+COPY internal/api/chat_handlers.go /src/internal/api/chat_handlers.go
+
+# Recompiler le binaire Go avec la modification
+WORKDIR /src
+RUN go build -o /app/scriberr cmd/server/main.go
+
+# Utiliser l'image de base pour le runtime
+FROM base AS runtime
+
+# Point d'entrée reste le même
+ENTRYPOINT ["/app/scriberr"]
