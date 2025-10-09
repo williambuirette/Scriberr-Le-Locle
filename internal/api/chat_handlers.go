@@ -66,9 +66,20 @@ func (h *Handler) getLLMService() (llm.Service, string, error) {
 	var cfg models.LLMConfig
 	if err := database.DB.Where("is_active = ?", true).First(&cfg).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, "", fmt.Errorf("no active LLM configuration found")
+			// Create default Ollama configuration if none exists
+			defaultURL := "http://host.docker.internal:11434"
+			defaultCfg := models.LLMConfig{
+				Provider: "ollama",
+				BaseURL:  &defaultURL,
+				IsActive: true,
+			}
+			if createErr := database.DB.Create(&defaultCfg).Error; createErr != nil {
+				return nil, "", fmt.Errorf("failed to create default LLM config: %w", createErr)
+			}
+			cfg = defaultCfg
+		} else {
+			return nil, "", fmt.Errorf("failed to get LLM config: %w", err)
 		}
-		return nil, "", fmt.Errorf("failed to get LLM config: %w", err)
 	}
 	switch strings.ToLower(cfg.Provider) {
 	case "openai":
@@ -778,7 +789,7 @@ Return only the title, nothing else.`
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Second)
 	defer cancel()
 	// Use slightly higher temperature for more creative titles
 	// Use model defaults: do not set temperature explicitly
